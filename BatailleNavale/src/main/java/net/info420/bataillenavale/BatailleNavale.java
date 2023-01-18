@@ -17,6 +17,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
@@ -40,31 +41,21 @@ public class BatailleNavale extends Application {
     public ArrayList<ImageView> previewImages;
     public ArrayList<ImageView> boatImages;
 
-    /**
-     * Déclaration d'une énumération pour les directions de bateaux possible
-     */
-    public enum Direction {
-        /**
-         * Direction horizontal
-         */
-        Horizontal,
-        /**
-         * Direction vertical
-         */
-        Vertical
-    }
-
     public static Direction boatDirection;
     public static int boatSize = 3;
     public static Vector2 cursorPos;
 
-    /**Grille contenant les informations sur les bateaux de l'ordinateu*/
+    /**Grille contenant les informations sur les bateaux de l'ordinateur*/
     public static int [][] grilleOrdi = new int [10][10];
 
     /**Grille contenant les informations sur les bateaux du joueur*/
     public static int [][] grilleJoueur = new int [10][10];
 
     public static int placementBateau = 1;
+
+    public static ColorAdjust previewEffect;
+    public static ColorAdjust normalEffect;
+    public static ColorAdjust hitEffect;
 
     /**
      * HashMap permettant de lier l'ID du bateau à sa grosseur (nombre de case)
@@ -90,10 +81,23 @@ public class BatailleNavale extends Application {
         put("Torpilleur", 5);
     }};
 
+    public static double map(double value, double start, double stop, double targetStart, double targetStop) {
+        return targetStart + (targetStop - targetStart) * ((value - start) / (stop - start));
+    }
+
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-        System.out.println(System.getProperty("user.dir"));
+        previewEffect = new ColorAdjust();
+        previewEffect.setBrightness(0.5);
+
+        normalEffect = new ColorAdjust();
+
+        hitEffect = new ColorAdjust();
+        hitEffect.setHue(map(187, 0, 360, -1, 1));
+        hitEffect.setSaturation(1);
+        hitEffect.setBrightness(0.2);
+
         BoatHeadIMG = new Image(new FileInputStream(System.getProperty("user.dir") + "/BatailleNavale/src/images/head.png"));
         BoatBodyIMG = new Image(new FileInputStream(System.getProperty("user.dir") + "/BatailleNavale/src/images/body.png"));
         BoatTailIMG = new Image(new FileInputStream(System.getProperty("user.dir") + "/BatailleNavale/src/images/tail.png"));
@@ -418,17 +422,14 @@ public class BatailleNavale extends Application {
             rotation = 90;
         }
 
-        ColorAdjust colorChange = new ColorAdjust();
-        colorChange.setBrightness(0.5);
-
         ImageView head = new ImageView(BoatHeadIMG);
-        head.setEffect(colorChange);
+        head.setEffect(previewEffect);
         head.setRotate(rotation);
         ImageView body = new ImageView(BoatBodyIMG);
-        body.setEffect(colorChange);
+        body.setEffect(normalEffect);
         body.setRotate(rotation);
         ImageView tail = new ImageView(BoatTailIMG);
-        tail.setEffect(colorChange);
+        tail.setEffect(hitEffect);
         tail.setRotate(rotation);
 
         if(boatDirection == Direction.Horizontal) {
