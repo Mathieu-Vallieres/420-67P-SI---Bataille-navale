@@ -6,11 +6,13 @@ import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
+import javafx.scene.CacheHint;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -40,12 +42,15 @@ public class BatailleNavale extends Application {
     public ArrayList<ImageView> boatImages;
 
     public static boolean isHorizontal = true; // true = horizontal | false = vertical
+    public static int boatSize = 3;
+    public static Vector2 cursorPos;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-        /*BoatHeadIMG = new Image(new FileInputStream("src/images/body.png"));
-        BoatBodyIMG = new Image(new FileInputStream("src/images/body.png"));
-        BoatTailIMG = new Image(new FileInputStream("src/images/tail.png"));*/
+        System.out.println(System.getProperty("user.dir"));
+        BoatHeadIMG = new Image(new FileInputStream(System.getProperty("user.dir") + "/BatailleNavale/src/images/head.png"));
+        BoatBodyIMG = new Image(new FileInputStream(System.getProperty("user.dir") + "/BatailleNavale/src/images/body.png"));
+        BoatTailIMG = new Image(new FileInputStream(System.getProperty("user.dir") + "/BatailleNavale/src/images/tail.png"));
 
         previewImages = new ArrayList<ImageView>();
         boatImages = new ArrayList<ImageView>();
@@ -241,11 +246,67 @@ public class BatailleNavale extends Application {
     }
 
     private void EnterCell(Pane pane, int x, int y) {
+        for(ImageView image : previewImages) {
+            if(image.getParent() != null) {
+                ((Pane) image.getParent()).getChildren().remove(image);
+            }
+        }
 
+        cursorPos = new Vector2(x, y);
+
+        previewImages.clear();
+
+        int rotation = 0;
+        if(isHorizontal) {
+            rotation = 90;
+        }
+
+        System.out.println(rotation);
+
+        ColorAdjust colorChange = new ColorAdjust();
+        colorChange.setBrightness(0.5);
+
+        ImageView head = new ImageView(BoatHeadIMG);
+        head.setEffect(colorChange);
+        head.setRotate(rotation);
+        ImageView body = new ImageView(BoatBodyIMG);
+        body.setEffect(colorChange);
+        body.setRotate(rotation);
+        ImageView tail = new ImageView(BoatTailIMG);
+        tail.setEffect(colorChange);
+        tail.setRotate(rotation);
+
+        if(isHorizontal) {
+            if(x + boatSize <= 10) {
+                try {
+                    playerClickPanes[x][y].getChildren().add(tail);
+                    playerClickPanes[x + 1][y].getChildren().add(body);
+                    playerClickPanes[x + 2][y].getChildren().add(head);
+                } catch (Exception ex) {
+                    System.out.println("Position invalide");
+                }
+            }
+        } else {
+            if(y + boatSize <= 10) {
+                try {
+                    playerClickPanes[x][y].getChildren().add(head);
+                    playerClickPanes[x][y + 1].getChildren().add(body);
+                    playerClickPanes[x][y + 2].getChildren().add(tail);
+                } catch (Exception ex) {
+                    System.out.println("Position invalide");
+                }
+            }
+        }
+
+        previewImages.add(head);
+        previewImages.add(body);
+        previewImages.add(tail);
     }
 
     private void ToggleVerticalHorizontal() {
         isHorizontal = !isHorizontal;
+
+        EnterCell(null, cursorPos.x, cursorPos.y);
     }
 
     public static void main(String[] args) {
