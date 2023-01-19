@@ -7,10 +7,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
+import javafx.scene.control.*;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -488,7 +485,7 @@ public class BatailleNavale {
             // On boucle à travers les colonnes
             for(int j = 0; j < 10; j++)  {
                 // Si la case n'est pas de l'eau (0) et la case n'est pas un bateau touché (6), les bateaux ne sont pas toutes coulés
-                if(grille[i][j] != 0 && grille[i][j] != 6) {
+                if(grille[i][j] != 0 && grille[i][j] != 6 && grille[i][j] != 7) {
                     return false;
                 }
             }
@@ -536,7 +533,7 @@ public class BatailleNavale {
         int boatID = 0;
 
         // Si la position n'est pas de l'eau (0) ou un bateau déjà touché (6)
-        if(grille[ligne][colonne] != 0 && grille[ligne][colonne] != 6) {
+        if(grille[ligne][colonne] != 0 && grille[ligne][colonne] != 6 && grille[ligne][colonne] != 7) {
             // La torpille touche un bateau
             touche = true;
 
@@ -654,6 +651,16 @@ public class BatailleNavale {
                     brokenBoatImages.add(tail);
                 }
             }
+        }
+
+        if(aPerdu(grilleOrdi)) {
+            gameState = GameStates.FINI;
+            Gagnant = 'j';
+            messageFinPartie();
+        } else if(aPerdu(grilleJoueur)) {
+            gameState = GameStates.FINI;
+            Gagnant = 'o';
+            messageFinPartie();
         }
     }
 
@@ -838,10 +845,15 @@ public class BatailleNavale {
     }
 
     public static void messageFinPartie(){
+        Alert message;
         if (Gagnant == 'j'){
-
-        }else {
-
+            message = new Alert(Alert.AlertType.CONFIRMATION, "Bravo! Vous avez gagné!", new ButtonType("OK", ButtonBar.ButtonData.OK_DONE));
+            message.setTitle("Victoire!");
+            message.show();
+        }else if(Gagnant == 'o') {
+            message = new Alert(Alert.AlertType.ERROR, "Dommage! Vous avez perdu!", new ButtonType("OK", ButtonBar.ButtonData.OK_DONE));
+            message.setTitle("Défaite!");
+            message.show();
         }
     }
 
