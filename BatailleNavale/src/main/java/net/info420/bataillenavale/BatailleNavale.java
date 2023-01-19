@@ -17,17 +17,16 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class BatailleNavale extends Application {
-    public static int WindowHeight = 520;
+    public static int WindowHeight = 560;
     public static int WindowWidth = 920;
     public static Stage mainWindow;
     public Pane[][] playerClickPanes;
@@ -37,17 +36,68 @@ public class BatailleNavale extends Application {
     public Image BoatHeadIMG;
     public Image BoatBodyIMG;
     public Image BoatTailIMG;
+    public Label PlacementLabel;
 
     public ArrayList<ImageView> previewImages;
     public ArrayList<ImageView> boatImages;
 
-    public static boolean isHorizontal = true; // true = horizontal | false = vertical
+    public static Direction boatDirection;
     public static int boatSize = 3;
     public static Vector2 cursorPos;
 
+    /**Grille contenant les informations sur les bateaux de l'ordinateur*/
+    public static int [][] grilleOrdi = new int [10][10];
+
+    /**Grille contenant les informations sur les bateaux du joueur*/
+    public static int [][] grilleJoueur = new int [10][10];
+
+    public static int placementBateau = 1;
+
+    public static ColorAdjust previewEffect;
+    public static ColorAdjust normalEffect;
+    public static ColorAdjust hitEffect;
+
+    /**
+     * HashMap permettant de lier l'ID du bateau à sa grosseur (nombre de case)
+     */
+    @SuppressWarnings("serial")
+    public static HashMap<Integer, Integer> grandeurBateaux = new HashMap<Integer, Integer>() {{
+        put(1, 5);
+        put(2, 4);
+        put(3, 3);
+        put(4, 3);
+        put(5, 2);
+    }};
+
+    /**
+     * HashMap permettant de lier le nom d'un bateau à son ID
+     */
+    @SuppressWarnings("serial")
+    public static HashMap<String, Integer> idBateaux = new HashMap<String, Integer>() {{
+        put("Porte-Avions", 1);
+        put("Croiseur", 2);
+        put("Contre-Torpilleur", 3);
+        put("Sous-Marin", 4);
+        put("Torpilleur", 5);
+    }};
+
+    public static double map(double value, double start, double stop, double targetStart, double targetStop) {
+        return targetStart + (targetStop - targetStart) * ((value - start) / (stop - start));
+    }
+
+
     @Override
     public void start(Stage primaryStage) throws IOException {
-        System.out.println(System.getProperty("user.dir"));
+        previewEffect = new ColorAdjust();
+        previewEffect.setBrightness(0.5);
+
+        normalEffect = new ColorAdjust();
+
+        hitEffect = new ColorAdjust();
+        hitEffect.setHue(map(187, 0, 360, -1, 1));
+        hitEffect.setSaturation(1);
+        hitEffect.setBrightness(0.2);
+
         BoatHeadIMG = new Image(new FileInputStream(System.getProperty("user.dir") + "/BatailleNavale/src/images/head.png"));
         BoatBodyIMG = new Image(new FileInputStream(System.getProperty("user.dir") + "/BatailleNavale/src/images/body.png"));
         BoatTailIMG = new Image(new FileInputStream(System.getProperty("user.dir") + "/BatailleNavale/src/images/tail.png"));
@@ -113,7 +163,10 @@ public class BatailleNavale extends Application {
         RowConstraints row2 = new RowConstraints();
         row2.setPrefHeight(440);
 
-        rootGrid.getRowConstraints().add(row1);
+        RowConstraints row3 = new RowConstraints();
+        row3.setPrefHeight(40);
+
+        rootGrid.getRowConstraints().addAll(row1, row2, row3);
 
         root.getChildren().add(rootGrid);
 
@@ -160,6 +213,114 @@ public class BatailleNavale extends Application {
         GridPane.setHalignment(computerLabel, HPos.CENTER);
 
         GridPane.setHalignment(computerStack, HPos.CENTER);
+
+        PlacementLabel = new Label("Placement de: " + getBoatName() + " (" + grandeurBateaux.get(placementBateau) + " cases)");
+
+        rootGrid.add(PlacementLabel, 0, 2);
+    }
+
+    public static String getBoatName() {
+        for(Map.Entry<String, Integer> boat : idBateaux.entrySet()) {
+            if(boat.getValue() == placementBateau) {
+                return boat.getKey();
+            }
+        }
+
+        return "";
+    }
+
+    public static void remplirGrillesDeZeros()
+    {
+        for(int i = 0; i < 10; i ++)
+        {
+            for(int j = 0; j < 10; j ++)
+            {
+                grilleOrdi[i][j] = 0;
+                grilleJoueur[i][j] = 0;
+            }
+        }
+    }
+
+    public static boolean PosOk(int[][] grille, int ligne, int colonne, Direction direction, int tailleBateau) {
+        if(direction == Direction.Horizontal) { // Si la direction est horizontal
+            // Si la colonne additionné de la taille du bateau est inférieur ou égal à 10
+            if(colonne + tailleBateau <= 10) {
+                // On boucle à l'endroit où le bateau devrait être placé
+                for(int i = colonne; i < colonne + tailleBateau; i++) {
+                    // Si il n'y a pas de l'eau à l'endroit où on veut le placer, on retourne false
+                    if(grille[ligne][i] != 0) {
+                        return false;
+                    }
+                }
+                // Si on se rend ici, il y a uniquement de l'eau où on veut placer le bateau, on retourne donc true
+                return true;
+            } else { // On retourne false si la ligne additionné de la taille du bateau est supérieur ou égal à 9
+                return false;
+            }
+        } else if(direction == Direction.Vertical) { // Si la direction est verticale
+            // Si la ligne additionné de la taille du bateau est inférieur ou égal à 10
+            if(ligne + tailleBateau <= 10) {
+                // On boucle à l'endroit où le bateau devrait être placé
+                for(int i = ligne; i < ligne + tailleBateau; i++) {
+                    // Si il n'y a pas de l'eau à l'endroit où on veut le placer, on retourne false
+                    if(grille[i][colonne] != 0) {
+                        return false;
+                    }
+                }
+                // Si on se rend ici, il y a uniquement de l'eau où on veut placer le bateau, on retourne donc true
+                return true;
+            } else { // On retourne false si la ligne additionné de la taille du bateau est supérieur ou égal à 9
+                return false;
+            }
+        }
+
+        // Si la direction est ni horizontal, ni vertical, on retourne false
+        return false;
+    }
+
+    /**
+     * Fonction permettant de placer un bateau dans une grille
+     * @param grille La grille où on veut placer le bateau
+     * @param ligne La ligne où on veut placer le bateau
+     * @param colonne La colonne où on veut placer le bateau
+     * @param direction La direction où on veut placer le bateau
+     * @param idBateau L'ID du bateau qu'on veut placer
+     */
+    public static void placerBateau(int[][] grille, int ligne, int colonne, Direction direction, int idBateau) {
+        if(direction == Direction.Horizontal) { // Si la direction est horizontal
+            // On boucle à partir de la colonne jusqu'à la colonne additionné de la grandeur du bateau
+            for(int i = colonne; i < colonne + grandeurBateaux.get(idBateau); i++) {
+                // On met l'ID du bateau sur les bonnes cases
+                grille[ligne][i] = idBateau;
+            }
+        } else if(direction == Direction.Vertical) { // Si la direction est verticale
+            // On boucle à partir de la ligne jusqu'à la ligne additionné de la grandeur du bateau
+            for(int i = ligne; i < ligne + grandeurBateaux.get(idBateau); i++) {
+                // On met l'ID du bateau sur les bonnes cases
+                grille[i][colonne] = idBateau;
+            }
+        }
+    }
+
+    /**
+     * Fonction qui vérifie si tous les bateaux de la grille ont été coulés
+     * @param grille Grille qu'on veut vérifier si tous les bateaux ont été coulés
+     * @return Retourne si tous les bateaux de la grille ont été coulés
+     */
+    public static boolean aPerdu(int[][] grille) {
+        // On boucle à travers les lignes
+        for(int i = 0; i < 10; i++) {
+            // On boucle à travers les colonnes
+            for(int j = 0; j < 10; j++)  {
+                // Si la case n'est pas de l'eau (0) et la case n'est pas un bateau touché (6), les bateaux ne sont pas toutes coulés
+                if(grille[i][j] != 0 && grille[i][j] != 6) {
+                    return false;
+                }
+            }
+        }
+
+        // Toutes les cases sont de l'eau (0) et des bateaux touchées (6), la grille a perdu, on retourne false
+        return true;
     }
 
     private Pane CreateClickPane(int x, int y, boolean isComputer) {
@@ -257,26 +418,21 @@ public class BatailleNavale extends Application {
         previewImages.clear();
 
         int rotation = 0;
-        if(isHorizontal) {
+        if(boatDirection == Direction.Horizontal) {
             rotation = 90;
         }
 
-        System.out.println(rotation);
-
-        ColorAdjust colorChange = new ColorAdjust();
-        colorChange.setBrightness(0.5);
-
         ImageView head = new ImageView(BoatHeadIMG);
-        head.setEffect(colorChange);
+        head.setEffect(previewEffect);
         head.setRotate(rotation);
         ImageView body = new ImageView(BoatBodyIMG);
-        body.setEffect(colorChange);
+        body.setEffect(normalEffect);
         body.setRotate(rotation);
         ImageView tail = new ImageView(BoatTailIMG);
-        tail.setEffect(colorChange);
+        tail.setEffect(hitEffect);
         tail.setRotate(rotation);
 
-        if(isHorizontal) {
+        if(boatDirection == Direction.Horizontal) {
             if(x + boatSize <= 10) {
                 try {
                     playerClickPanes[x][y].getChildren().add(tail);
@@ -304,7 +460,11 @@ public class BatailleNavale extends Application {
     }
 
     private void ToggleVerticalHorizontal() {
-        isHorizontal = !isHorizontal;
+        if(boatDirection == Direction.Horizontal) {
+            boatDirection = Direction.Vertical;
+        } else {
+            boatDirection = Direction.Horizontal;
+        }
 
         EnterCell(null, cursorPos.x, cursorPos.y);
     }
