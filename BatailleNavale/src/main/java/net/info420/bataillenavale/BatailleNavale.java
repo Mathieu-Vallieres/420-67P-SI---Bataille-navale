@@ -15,6 +15,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+import org.controlsfx.control.tableview2.filter.filtereditor.SouthFilter;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -59,6 +60,7 @@ public class BatailleNavale {
     public static GameStates gameState = GameStates.PLACEMENT_BATEAU;
 
     public static boolean HardMode = false;
+    public static IntelligenceArtificielle intelligenceArtificielle;
 
     /**
      * HashMap permettant de lier l'ID du bateau à sa grosseur (nombre de case)
@@ -247,6 +249,8 @@ public class BatailleNavale {
     }
 
     public static void initJeu() {
+        intelligenceArtificielle = new IntelligenceArtificielle(HardMode);
+
         positionBateauxEnnemis = new HashMap<>();
 
         remplirGrillesDeZeros();
@@ -859,6 +863,10 @@ public class BatailleNavale {
     }
 
     private static void tirerOrdi() {
+        /*Vector2 test = intelligenceArtificielle.tirer();
+
+        System.out.println("X:" + test.x + " Y:" + test.y);*/
+
         Vector2 position = new Vector2(randRange(0, 9), randRange(0, 9));
         tirerTorpille(grilleJoueur, position.y, position.x, true);
     }
