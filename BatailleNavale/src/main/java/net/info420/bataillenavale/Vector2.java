@@ -25,6 +25,15 @@ public class Vector2 {
     }
 
     /**
+     * Constructeur sans arguments qui initialise le vecteur à 0,0
+     */
+    public Vector2()
+    {
+        this.x = 0;
+        this.y = 0;
+    }
+
+    /**
      * Méthode qui retourne la position horizontale
      * @return La position horizontale
      */
