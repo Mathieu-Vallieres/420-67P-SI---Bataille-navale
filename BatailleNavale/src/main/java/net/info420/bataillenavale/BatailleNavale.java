@@ -1,12 +1,9 @@
 package net.info420.bataillenavale;
 
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.geometry.VPos;
-import javafx.scene.CacheHint;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
@@ -17,7 +14,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
@@ -29,20 +25,19 @@ public class BatailleNavale extends Application {
     public static int WindowHeight = 560;
     public static int WindowWidth = 920;
     public static Stage mainWindow;
-    public Pane[][] playerClickPanes;
-    public Pane[][] computerClickPanes;
+    public static Pane[][] playerClickPanes;
+    public static Pane[][] computerClickPanes;
     public GridPane playerGrid;
     public GridPane computerGrid;
-    public Image BoatHeadIMG;
-    public Image BoatBodyIMG;
-    public Image BoatTailIMG;
-    public Label PlacementLabel;
+    public static Image BoatHeadIMG;
+    public static Image BoatBodyIMG;
+    public static Image BoatTailIMG;
+    public static Label StatusLabel;
 
-    public ArrayList<ImageView> previewImages;
-    public ArrayList<ImageView> boatImages;
+    public static ArrayList<ImageView> previewImages;
+    public static ArrayList<ImageView> boatImages;
 
-    public static Direction boatDirection;
-    public static int boatSize = 3;
+    public static Direction boatDirection = Direction.Horizontal;
     public static Vector2 cursorPos;
 
     /**Grille contenant les informations sur les bateaux de l'ordinateur*/
@@ -56,6 +51,8 @@ public class BatailleNavale extends Application {
     public static ColorAdjust previewEffect;
     public static ColorAdjust normalEffect;
     public static ColorAdjust hitEffect;
+
+    public static GameStates gameState = GameStates.PLACEMENT_BATEAU;
 
     /**
      * HashMap permettant de lier l'ID du bateau à sa grosseur (nombre de case)
@@ -85,7 +82,6 @@ public class BatailleNavale extends Application {
         return targetStart + (targetStop - targetStart) * ((value - start) / (stop - start));
     }
 
-
     @Override
     public void start(Stage primaryStage) throws IOException {
         previewEffect = new ColorAdjust();
@@ -110,7 +106,7 @@ public class BatailleNavale extends Application {
 
         mainWindow = primaryStage;
 
-        primaryStage.setTitle("Battleship interface");
+        primaryStage.setTitle("Battleship");
         primaryStage.setMinHeight(WindowHeight);
         primaryStage.setMinWidth(WindowWidth);
         primaryStage.setResizable(false);
@@ -125,7 +121,7 @@ public class BatailleNavale extends Application {
         MenuItem newGame = new MenuItem("Nouvelle partie");
 
         newGame.setOnAction(e -> {
-            System.out.println("Nouvelle partie");
+            initJeu();
         });
 
         MenuItem quitter = new MenuItem("Quitter");
@@ -214,9 +210,41 @@ public class BatailleNavale extends Application {
 
         GridPane.setHalignment(computerStack, HPos.CENTER);
 
-        PlacementLabel = new Label("Placement de: " + getBoatName() + " (" + grandeurBateaux.get(placementBateau) + " cases)");
+        StatusLabel = new Label();
+        rootGrid.add(StatusLabel, 0, 2);
 
-        rootGrid.add(PlacementLabel, 0, 2);
+        initJeu();
+    }
+
+    public static void initJeu() {
+        remplirGrillesDeZeros();
+
+        for(ImageView image : previewImages) {
+            if(image.getParent() != null) {
+                ((Pane) image.getParent()).getChildren().remove(image);
+            }
+        }
+        previewImages.clear();
+
+        for(ImageView image : boatImages) {
+            if(image.getParent() != null) {
+                ((Pane) image.getParent()).getChildren().remove(image);
+            }
+        }
+        boatImages.clear();
+
+        initGrilleOrdi();
+        gameState = GameStates.PLACEMENT_BATEAU;
+        placementBateau = 1;
+        UpdateStatusLabel();
+    }
+
+    public static void UpdateStatusLabel() {
+        if(gameState == GameStates.PLACEMENT_BATEAU) {
+            StatusLabel.setText("Placement de: " + getBoatName() + " (" + grandeurBateaux.get(placementBateau) + " cases)");
+        } else if(gameState == GameStates.JEU) {
+            StatusLabel.setText("Jeu en cours");
+        }
     }
 
     public static String getBoatName() {
@@ -239,6 +267,48 @@ public class BatailleNavale extends Application {
                 grilleJoueur[i][j] = 0;
             }
         }
+    }
+
+    /**
+     * Fonction qui permet d'initialiser la grille de l'ordinateur avec des bateaux aléatoires
+     */
+    public static void initGrilleOrdi() {
+        // Déclaration des variables
+        int ligne;
+        int colonne;
+        Direction direction;
+
+        // Déclaration de la variable posOk qui sert à déterminer si le bateau peut être placé à l'endroit voulu
+        boolean posOk = false;
+
+        // On boucle à travers la HashMap contenant l'information des bateaux
+        for (Map.Entry<String, Integer> bateau : idBateaux.entrySet()) {
+            do {
+                // Si un nombre aléatoire entre 1 et 10 est supérieur à 5, la direction est horizontal
+                // Il y a probablement une meilleure méthode pour un nombre aléatoire ayant 50% de chance, mais cela fonctionne bien
+                if(randRange(1, 10) > 5) {
+                    direction = Direction.Horizontal;
+                } else { // Sinon la direction est vertical
+                    direction = Direction.Vertical;
+                }
+
+                // On obtient une position de ligne entre 0 et 9
+                ligne = randRange(0, 9);
+
+                // On obtient une position de colonne entre 0 et 9
+                colonne = randRange(0, 9);
+
+                // On regarde si la position aléatoire est valide
+                posOk = PosOk(grilleOrdi, ligne, colonne, direction, grandeurBateaux.get(bateau.getValue()));
+
+                // Si la position est valide, on place le bateau
+                if(posOk) {
+                    placerBateau(grilleOrdi, ligne, colonne, direction, bateau.getValue(), false);
+                }
+            } while(!posOk); // On boucle tant que la position du bateau n'est pas correct
+        }
+
+        afficherGrille(grilleOrdi);
     }
 
     public static boolean PosOk(int[][] grille, int ligne, int colonne, Direction direction, int tailleBateau) {
@@ -286,12 +356,51 @@ public class BatailleNavale extends Application {
      * @param direction La direction où on veut placer le bateau
      * @param idBateau L'ID du bateau qu'on veut placer
      */
-    public static void placerBateau(int[][] grille, int ligne, int colonne, Direction direction, int idBateau) {
+    public static void placerBateau(int[][] grille, int ligne, int colonne, Direction direction, int idBateau, boolean joueur) {
+        if(joueur) {
+            for (ImageView image : previewImages) {
+                if (image.getParent() != null) {
+                    ((Pane) image.getParent()).getChildren().remove(image);
+                }
+            }
+            previewImages.clear();
+        }
+
+        int rotation = 0;
+        if(direction == Direction.Horizontal) {
+            rotation = 90;
+        }
+
+        ImageView head = new ImageView(BoatHeadIMG);
+        head.setEffect(normalEffect);
+        head.setRotate(rotation);
+
+        ImageView tail = new ImageView(BoatTailIMG);
+        tail.setEffect(normalEffect);
+        tail.setRotate(rotation);
+
         if(direction == Direction.Horizontal) { // Si la direction est horizontal
             // On boucle à partir de la colonne jusqu'à la colonne additionné de la grandeur du bateau
             for(int i = colonne; i < colonne + grandeurBateaux.get(idBateau); i++) {
                 // On met l'ID du bateau sur les bonnes cases
                 grille[ligne][i] = idBateau;
+            }
+            if(joueur) {
+                playerClickPanes[colonne][ligne].getChildren().add(tail);
+                boatImages.add(tail);
+
+                if (grandeurBateaux.get(placementBateau) > 2) {
+                    for (int i = colonne + 1; i < colonne + (grandeurBateaux.get(placementBateau)) - 1; i++) {
+                        ImageView body = new ImageView(BoatBodyIMG);
+                        body.setEffect(normalEffect);
+                        body.setRotate(rotation);
+                        playerClickPanes[i][ligne].getChildren().add(body);
+                        boatImages.add(body);
+                    }
+                }
+
+                playerClickPanes[colonne + (grandeurBateaux.get(placementBateau) - 1)][ligne].getChildren().add((head));
+                boatImages.add(head);
             }
         } else if(direction == Direction.Vertical) { // Si la direction est verticale
             // On boucle à partir de la ligne jusqu'à la ligne additionné de la grandeur du bateau
@@ -299,6 +408,34 @@ public class BatailleNavale extends Application {
                 // On met l'ID du bateau sur les bonnes cases
                 grille[i][colonne] = idBateau;
             }
+
+            if(joueur) {
+                playerClickPanes[colonne][ligne].getChildren().add(head);
+                boatImages.add(head);
+
+                if (grandeurBateaux.get(placementBateau) > 2) {
+                    for (int i = ligne + 1; i < ligne + (grandeurBateaux.get(placementBateau)) - 1; i++) {
+                        ImageView body = new ImageView(BoatBodyIMG);
+                        body.setEffect(normalEffect);
+                        body.setRotate(rotation);
+                        playerClickPanes[colonne][i].getChildren().add(body);
+                        boatImages.add(body);
+                    }
+                }
+
+                playerClickPanes[colonne][ligne + (grandeurBateaux.get(placementBateau) - 1)].getChildren().add((tail));
+                boatImages.add(tail);
+            }
+        }
+
+        if(joueur) {
+            placementBateau++;
+
+            if (placementBateau > 5) {
+                gameState = GameStates.JEU;
+            }
+
+            UpdateStatusLabel();
         }
     }
 
@@ -335,7 +472,8 @@ public class BatailleNavale extends Application {
         }
 
         newPane.setOnMouseClicked(e -> {
-            ClickOnCell(newPane, x, y, isComputer);
+            if(e.getButton() == MouseButton.PRIMARY)
+                ClickOnCell(newPane, x, y, isComputer);
         });
 
         if(!isComputer) {
@@ -403,6 +541,11 @@ public class BatailleNavale extends Application {
     }
 
     private void ClickOnCell(Pane pane, int x, int y, boolean isComputer) {
+        if(gameState == GameStates.PLACEMENT_BATEAU) {
+            if(PosOk(grilleJoueur, y, x, boatDirection, grandeurBateaux.get(placementBateau))) {
+                placerBateau(grilleJoueur, y, x, boatDirection, placementBateau, true);
+            }
+        }
         System.out.println("X: " + x + " " + "Y: " + y + " Computer: " + isComputer);
     }
 
@@ -411,6 +554,10 @@ public class BatailleNavale extends Application {
             if(image.getParent() != null) {
                 ((Pane) image.getParent()).getChildren().remove(image);
             }
+        }
+
+        if(gameState != GameStates.PLACEMENT_BATEAU) {
+            return;
         }
 
         cursorPos = new Vector2(x, y);
@@ -423,6 +570,56 @@ public class BatailleNavale extends Application {
         }
 
         ImageView head = new ImageView(BoatHeadIMG);
+        head.setEffect(previewEffect);
+        head.setRotate(rotation);
+
+        ImageView tail = new ImageView(BoatTailIMG);
+        tail.setEffect(previewEffect);
+        tail.setRotate(rotation);
+
+        if(boatDirection == Direction.Horizontal) {
+            if(PosOk(grilleJoueur, y, x, boatDirection, grandeurBateaux.get(placementBateau))) {
+                try {
+                    playerClickPanes[x][y].getChildren().add(tail);
+                    previewImages.add(tail);
+
+                    if(grandeurBateaux.get(placementBateau) > 2) {
+                        for(int i = x + 1; i < x + (grandeurBateaux.get(placementBateau)) - 1; i++) {
+                            ImageView body = new ImageView(BoatBodyIMG);
+                            body.setEffect(previewEffect);
+                            body.setRotate(rotation);
+                            playerClickPanes[i][y].getChildren().add(body);
+                            previewImages.add(body);
+                        }
+                    }
+
+                    playerClickPanes[x + (grandeurBateaux.get(placementBateau) - 1)][y].getChildren().add((head));
+                    previewImages.add(head);
+                } catch (Exception ex) {}
+            }
+        } else {
+            if(PosOk(grilleJoueur, y, x, boatDirection, grandeurBateaux.get(placementBateau))) {
+                try {
+                    playerClickPanes[x][y].getChildren().add(head);
+                    previewImages.add(head);
+
+                    if(grandeurBateaux.get(placementBateau) > 2) {
+                        for(int i = y + 1; i < y + (grandeurBateaux.get(placementBateau)) - 1; i++) {
+                            ImageView body = new ImageView(BoatBodyIMG);
+                            body.setEffect(previewEffect);
+                            body.setRotate(rotation);
+                            playerClickPanes[x][i].getChildren().add(body);
+                            previewImages.add(body);
+                        }
+                    }
+
+                    playerClickPanes[x][y + (grandeurBateaux.get(placementBateau) - 1)].getChildren().add((tail));
+                    previewImages.add(tail);
+                } catch (Exception ex) {}
+            }
+        }
+
+        /*ImageView head = new ImageView(BoatHeadIMG);
         head.setEffect(previewEffect);
         head.setRotate(rotation);
         ImageView body = new ImageView(BoatBodyIMG);
@@ -456,7 +653,36 @@ public class BatailleNavale extends Application {
 
         previewImages.add(head);
         previewImages.add(body);
-        previewImages.add(tail);
+        previewImages.add(tail);*/
+    }
+
+    public static void afficherGrille(int[][] grille) {
+        // Print des espaces pour l'alignement
+        System.out.print("    ");
+
+        // Boucle qui permet d'afficher les lettres de A à I
+        for(int i = 0; i < 10; i++) {
+            System.out.print(Character.toString(i + 65) + "  ");
+        }
+
+        // Retour à la ligne (newline)
+        System.out.print("\n");
+
+        // Boucle à travers les lignes
+        for(int i = 0; i < 10; i++) {
+            // Print le numero de ligne
+            // La ligne #10 à une espace de moins pour l'alignement
+            System.out.print(i + 1 + (i == 9 ? "  " : "   "));
+
+            // Boucle à travers les colonnes
+            for(int j = 0; j < 10; j++) {
+                // Print le contenu de la grille
+                System.out.print(grille[i][j] + "  ");
+            }
+
+            // Retour à la ligne (newline)
+            System.out.print("\n");
+        }
     }
 
     private void ToggleVerticalHorizontal() {
@@ -467,6 +693,21 @@ public class BatailleNavale extends Application {
         }
 
         EnterCell(null, cursorPos.x, cursorPos.y);
+    }
+
+    /**
+     * Déclaration d'un Random utilisé pour avoir des nombres aléatoires
+     */
+    public static Random rand = new Random();
+
+    /**
+     * Fonction qui permet d'obtenir un nombre entier entre a et b
+     * @param a Le plus bas nombre possible
+     * @param b Le plus haut nombre possible
+     * @return Un nombre entier entre a et b
+     */
+    public static int randRange(int a, int b) {
+        return rand.nextInt(b-a)+a;
     }
 
     public static void main(String[] args) {
