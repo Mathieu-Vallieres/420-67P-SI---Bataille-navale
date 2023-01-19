@@ -348,9 +348,6 @@ public class BatailleNavale {
                 }
             } while(!posOk); // On boucle tant que la position du bateau n'est pas correct
         }
-
-
-
         afficherGrille(grilleOrdi);
     }
 
