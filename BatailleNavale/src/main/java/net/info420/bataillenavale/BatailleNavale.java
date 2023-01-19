@@ -85,6 +85,11 @@ public class BatailleNavale {
     }};
 
     /**
+     * Déclaration d'un Random utilisé pour avoir des nombres aléatoires
+     */
+    public static Random rand = new Random();
+
+    /**
      * HashMap permettant de lier d'id du bateau avec sa position et sa direction (Classe bateauxEnnemis)
      */
     @SuppressWarnings("serial")
@@ -109,7 +114,7 @@ public class BatailleNavale {
         hitEffect = new ColorAdjust();
         hitEffect.setHue(map(187, 0, 360, -1, 1));
         hitEffect.setSaturation(1);
-        hitEffect.setBrightness(0.2);
+        hitEffect.setBrightness(-0.35);
 
         try {
             BoatHeadIMG = new Image(new FileInputStream(System.getProperty("user.dir") + "/BatailleNavale/src/images/head.png"));
@@ -146,13 +151,20 @@ public class BatailleNavale {
             initJeu();
         });
 
+        MenuItem retour = new MenuItem("Retour au menu principal");
+
+        retour.setOnAction(e -> {
+            MenuPrincipal.mainWindow.show();
+            mainWindow.close();
+        });
+
         MenuItem quitter = new MenuItem("Quitter");
 
         quitter.setOnAction(e -> {
             System.exit(0);
         });
 
-        optionMenu.getItems().addAll(newGame, quitter);
+        optionMenu.getItems().addAll(newGame, retour, quitter);
 
         StackPane.setAlignment(menuBar, Pos.TOP_CENTER);
 
@@ -498,7 +510,8 @@ public class BatailleNavale {
     private static Pane CreateClickPane(int x, int y, boolean isComputer) {
         Pane newPane = new Pane();
         newPane.setMinSize(40, 40);
-        newPane.setStyle("-fx-background-color: white; -fx-border-color: black;");
+        //newPane.setStyle("-fx-background-color: white; -fx-border-color: black;");
+        newPane.setStyle("-fx-background-image: url('http://clipart-library.com/img/1745178.gif'); -fx-opacity: 0.80; -fx-background-size: 100; -fx-border-color: black;");
 
         if(isComputer) {
             computerGrid.add(newPane, x + 1, y + 1);
@@ -571,9 +584,11 @@ public class BatailleNavale {
                 System.out.println("Tir dans l'eau!");
                 grille[ligne][colonne] = 7;
                 if(joueur) {
-                    playerClickPanes[colonne][ligne].setStyle("-fx-background-color: grey; -fx-border-color: black;");
+                    //playerClickPanes[colonne][ligne].setStyle("-fx-background-color: grey; -fx-border-color: black;");
+                    playerClickPanes[colonne][ligne].setStyle("-fx-background-image: url('http://clipart-library.com/img/1745178.gif') url('https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Red_X.svg/1024px-Red_X.svg.png'); -fx-opacity: 0.80; -fx-background-size: 100, 40; -fx-border-color: red; -fx-border-width: 3;");
                 } else {
-                    computerClickPanes[colonne][ligne].setStyle("-fx-background-color: grey; -fx-border-color: black;");
+                    //computerClickPanes[colonne][ligne].setStyle("-fx-background-color: grey; -fx-border-color: black;");
+                    computerClickPanes[colonne][ligne].setStyle("-fx-background-image: url('http://clipart-library.com/img/1745178.gif'), url('https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Red_X.svg/1024px-Red_X.svg.png'); -fx-opacity: 0.80; -fx-background-size: 100, 40; -fx-border-color: red; -fx-border-width: 3;");
                 }
             } else if(grille[ligne][colonne] == 6) { // Si la torpille est sur un bateau déjà touché, on le montre à l'utilisateur
                 System.out.println("Bateau déjà touché!");
@@ -590,7 +605,8 @@ public class BatailleNavale {
             }
         } else {
             if(touche && !coule) {
-                computerClickPanes[colonne][ligne].setStyle("-fx-background-color: red; -fx-border-color: black;");
+                //computerClickPanes[colonne][ligne].setStyle("-fx-background-color: red; -fx-border-color: black;");
+                computerClickPanes[colonne][ligne].setStyle("-fx-background-image: url('http://clipart-library.com/img/1745178.gif'), url('https://static.wikia.nocookie.net/minecraft_gamepedia/images/6/65/Fire_BE.gif/revision/latest?cb=20200325141322'); -fx-opacity: 0.80; -fx-background-position: center; -fx-background-size: 100, 35; -fx-border-color: lime; -fx-border-width: 3;");
             } else if(touche && coule) {
                 Direction boatDirect = positionBateauxEnnemis.get(boatID).getDirection();
                 Vector2 boatPos = positionBateauxEnnemis.get(boatID).getPosition();
@@ -611,7 +627,8 @@ public class BatailleNavale {
 
                 if(boatDirect == Direction.Horizontal) {
                     for(int i = boatPos.x; i < boatPos.x + boatSize; i++) {
-                        computerClickPanes[i][ligne].setStyle("-fx-background-color: white; -fx-border-color: black;");
+                        //computerClickPanes[i][ligne].setStyle("-fx-background-color: white; -fx-border-color: black;");
+                        computerClickPanes[i][ligne].setStyle("-fx-background-image: url('http://clipart-library.com/img/1745178.gif'); -fx-opacity: 0.80; -fx-background-size: 100; -fx-border-color: lime; -fx-border-width: 3;");
                     }
 
                     computerClickPanes[boatPos.x][ligne].getChildren().add(tail);
@@ -631,7 +648,8 @@ public class BatailleNavale {
                     brokenBoatImages.add(head);
                 } else {
                     for(int i = boatPos.y; i < boatPos.y + boatSize; i++) {
-                        computerClickPanes[colonne][i].setStyle("-fx-background-color: white; -fx-border-color: black;");
+                        //computerClickPanes[colonne][i].setStyle("-fx-background-color: white; -fx-border-color: black;");
+                        computerClickPanes[colonne][i].setStyle("-fx-background-image: url('http://clipart-library.com/img/1745178.gif'); -fx-opacity: 0.80; -fx-background-size: 100; -fx-border-color: lime; -fx-border-width: 3");
                     }
 
                     computerClickPanes[colonne][boatPos.y].getChildren().add(head);
@@ -657,10 +675,16 @@ public class BatailleNavale {
             gameState = GameStates.FINI;
             Gagnant = 'j';
             messageFinPartie();
+            return;
         } else if(aPerdu(grilleJoueur)) {
             gameState = GameStates.FINI;
             Gagnant = 'o';
             messageFinPartie();
+            return;
+        }
+
+        if(!joueur) {
+            tirerOrdi();
         }
     }
 
@@ -834,6 +858,11 @@ public class BatailleNavale {
         }
     }
 
+    private static void tirerOrdi() {
+        Vector2 position = new Vector2(randRange(0, 9), randRange(0, 9));
+        tirerTorpille(grilleJoueur, position.y, position.x, true);
+    }
+
     private void ToggleVerticalHorizontal() {
         if(boatDirection == Direction.Horizontal) {
             boatDirection = Direction.Vertical;
@@ -849,18 +878,15 @@ public class BatailleNavale {
         if (Gagnant == 'j'){
             message = new Alert(Alert.AlertType.CONFIRMATION, "Bravo! Vous avez gagné!", new ButtonType("OK", ButtonBar.ButtonData.OK_DONE));
             message.setTitle("Victoire!");
+            message.setHeaderText("Victoire!");
             message.show();
         }else if(Gagnant == 'o') {
             message = new Alert(Alert.AlertType.ERROR, "Dommage! Vous avez perdu!", new ButtonType("OK", ButtonBar.ButtonData.OK_DONE));
             message.setTitle("Défaite!");
+            message.setHeaderText("Défaite!");
             message.show();
         }
     }
-
-    /**
-     * Déclaration d'un Random utilisé pour avoir des nombres aléatoires
-     */
-    public static Random rand = new Random();
 
     /**
      * Fonction qui permet d'obtenir un nombre entier entre a et b
