@@ -43,6 +43,11 @@ public class IntelligenceArtificielle {
     //Stocke l'ID du bateau qui est visé par le tir intelligent
     public int IDBateauTirIntelligent;
 
+    //Directions possibles pour les prochains tirs intelligents
+    //1 Haut, 2 Gauche, 3 Bas, 4 Droite
+    public int directionTir;
+    public int derniereDirection;
+
     /**
      * Permet de générer des coordonnées aléatoires selon le mode de difficulté
      *
@@ -113,7 +118,43 @@ public class IntelligenceArtificielle {
     {
         if(tirIntelligent)
         {
+            /*
+            //Par défaut, le tir intelligent commence par la case en haut de celle qui a été touchée
+            directionTir = 1;
 
+            //Élimine les directions de tir impossibles si le bateau est collé sur un des côtés de la grille
+
+
+
+
+            switch (directionTir)
+            {
+                case 1:
+                {
+
+                }
+                case 2:
+                {
+
+                }
+                case 3:
+                {
+
+                }
+                case 4:
+                {
+
+                }
+            }
+
+
+
+            if(couler(tableauTirs, IDBateauTirIntelligent))
+            {
+                //5a. Si le bateau est coulé, désactiver le tir intelligent
+                tirIntelligent = false;
+            }
+             */
         }
         else
         {
@@ -124,14 +165,14 @@ public class IntelligenceArtificielle {
             while (tableauTirs[coords.GetX()][coords.GetY()] != 6 && tableauTirs[coords.GetX()][coords.GetY] != 7);
 
             //À partir d'ici on peut tirer
-            if(tableauTirs[coords.GetX()][coords.GetY()])
+            if(tableauTirs[coords.GetX()][coords.GetY()] > 0)
             {
                 //Bateau touché :
                 //1. Stocke l'ID du bateau pour pouvoir le cibler avec le tir intelligent
                 IDBateauTirIntelligent = tableauTirs[coords.GetX()][coords.GetY()];
                 //2. Marque la case comme une section de bateau touchée
                 tableauTirs[coords.GetX()][coords.GetY()] = 6;
-                //3. Stocke la position du dernier tir pour
+                //3. Stocke la position du dernier tir pour le tir intelligent
                 dernierTir = new Vector2(coords.GetX(),coords.GetY());
                 //4. Tester si le bateau est coulé
                 if(couler(tableauTirs, IDBateauTirIntelligent))
